@@ -9,14 +9,16 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.location.Address;
-import android.location.Geocoder;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.Display;
+import android.view.View;
+import android.widget.CheckBox;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -32,25 +34,29 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.maps.model.RoundCap;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import edu.depaul.tkumar.walkingtours.databinding.ActivityMapsBinding;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
-    private GoogleMap mMap;
+    private final ArrayList<LatLng> latLonHistory = new ArrayList<>();
+    private final ArrayList<LatLng> latLonRoute = new ArrayList<>();
+    private LocationListener locationListener;
+    private LocationManager locationManager;
+    private Polyline llHistoryPolyline;
+    private Polyline llRoutePolyline;
     private ActivityMapsBinding binding;
     private FenceManager fenceManager;
-    private LocationManager locationManager;
-    private LocationListener locationListener;
-    private Polyline llHistoryPolyline;
-    private final ArrayList<LatLng> latLonHistory = new ArrayList<>();
     private Marker personMarker;
-    private Geocoder geocoder;
+    private GoogleMap mMap;
+    private TextView currentAddressTextView;
+    private CheckBox travelPathCheckbox;
+    private CheckBox geofenceCheckbox;
+    private CheckBox tourPathCheckbox;
+    private CheckBox addressCheckbox;
+    private ProgressBar progressBar;
     public static int screenWidth;
-    private TextView mapsAddress;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,18 +64,38 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         binding = ActivityMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        mapsAddress = findViewById(R.id.mapsAddressTextView);
         initMap();
+        initializeFields();
         getScreenDimensions();
+        progressBar.setVisibility(View.VISIBLE);
     }
 
     private void initMap() {
         fenceManager = new FenceManager(this);
+
+        //geocoder = new Geocoder(this);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         if (mapFragment != null)
             mapFragment.getMapAsync(this);
+    }
+
+    private void initializeFields(){
+        currentAddressTextView = findViewById(R.id.mapsCurrentAddressTextView);
+        addressCheckbox = findViewById(R.id.mapsAddressCheckbox);
+        geofenceCheckbox = findViewById(R.id.mapsGeofenceCheckbox);
+        travelPathCheckbox = findViewById(R.id.mapsTravelPathCheckbox);
+        tourPathCheckbox = findViewById(R.id.mapsTourPathCheckbox);
+        progressBar = findViewById(R.id.mapsProgressBar);
+
+        Typeface font = Typeface.createFromAsset(getAssets(), "fonts/Acme-Regular.ttf");
+
+        currentAddressTextView.setTypeface(font);
+        addressCheckbox.setTypeface(font);
+        geofenceCheckbox.setTypeface(font);
+        travelPathCheckbox.setTypeface(font);
+        tourPathCheckbox.setTypeface(font);
     }
 
     private void getScreenDimensions() {
@@ -92,6 +118,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      */
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        progressBar.setVisibility(View.GONE);
+
         mMap = googleMap;
 
         mMap.animateCamera(CameraUpdateFactory.zoomTo(16));
@@ -100,11 +128,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.getUiSettings().setZoomControlsEnabled(true);
         mMap.getUiSettings().setCompassEnabled(true);
 
-        // Add a marker in Sydney and move the camera
-//        LatLng sydney = new LatLng(-34, 151);
-//        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-//        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
-//        setupLocationListener();
+        setupLocationListener();
     }
 
     private void setupLocationListener() {
@@ -130,6 +154,31 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
+    public void geofenceVisibilityOption(View v) {
+        //CheckBox cb = (CheckBox) v;
+        if (geofenceCheckbox.isChecked()) {
+            fenceManager.drawFences();
+        } else {
+            fenceManager.eraseFences();
+        }
+    }
+
+    public void addressVisibilityOption(View v){
+        if(addressCheckbox.isChecked()){
+            currentAddressTextView.setVisibility(View.VISIBLE);
+        } else {
+            currentAddressTextView.setVisibility(View.INVISIBLE);
+        }
+    }
+
+    public void travelPathVisibility(View view){
+        llHistoryPolyline.setVisible(travelPathCheckbox.isChecked());
+    }
+
+    public void tourPathVisibility(View view){
+        llRoutePolyline.setVisible(tourPathCheckbox.isChecked());
+    }
+
     public GoogleMap getMap() {
         return mMap;
     }
@@ -139,16 +188,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
         latLonHistory.add(latLng); // Add the LL to our location history
 
-        try {
-            List<Address> addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
-            Address address = addresses.get(0);
-            mapsAddress.setText(address.getAddressLine(0));
-
-        } catch (IOException e) {
-            e.printStackTrace();
-            mapsAddress.setText("");
-        }
-
+//        try {
+//            List<Address> addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+//            Address address = addresses.get(0);
+//            mapsAddress.setText(address.getAddressLine(0));
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//            mapsAddress.setText("");
+//        }
+        GeocoderRunnable geocoderRunnable = new GeocoderRunnable(this, latLng.latitude, latLng.longitude);
+        new Thread(geocoderRunnable).start();
 
         if (llHistoryPolyline != null) {
             llHistoryPolyline.remove(); // Remove old polyline
@@ -167,9 +216,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 polylineOptions.add(ll);
             }
             llHistoryPolyline = mMap.addPolyline(polylineOptions);
+//            if(travelPathCheckbox.isChecked()){
+//                llHistoryPolyline.setVisible(true);
+//            }else{
+//                llHistoryPolyline.setVisible(false);
+//            }
+            View view = getCurrentFocus();
+            travelPathVisibility(view);
             llHistoryPolyline.setEndCap(new RoundCap());
-            llHistoryPolyline.setWidth(8);
-            llHistoryPolyline.setColor(Color.BLUE);
+            llHistoryPolyline.setWidth(12);
+            llHistoryPolyline.setColor(Color.parseColor("#00723d"));
 
 
             float r = getRadius();
@@ -194,12 +250,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16.0f));
     }
 
+    public void setCurrentAddressTextView(String s){
+        currentAddressTextView.setText(s);
+    }
+
     private float getRadius() {
         float z = mMap.getCameraPosition().zoom;
         float factor = (float) ((35.0 / 2.0 * z) - (355.0 / 2.0));
         float multiplier = ((7.0f / 7200.0f) * screenWidth) - (1.0f / 20.0f);
-        float radius = factor * multiplier;
-        return radius;
+        return factor * multiplier;
     }
 
 //    @Override
@@ -208,22 +267,43 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 //        if (locationManager != null && locationListener != null)
 //            locationManager.removeUpdates(locationListener);
 //    }
-//
-//    @Override
-//    protected void onResume() {
-//        super.onResume();
-//        if (locationManager != null && locationListener != null)
-//            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                // TODO: Consider calling
-//                //    ActivityCompat#requestPermissions
-//                // here to request the missing permissions, and then overriding
-//                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-//                //                                          int[] grantResults)
-//                // to handle the case where the user grants the permission. See the documentation
-//                // for ActivityCompat#requestPermissions for more details.
-//                return;
-//            }
-//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 500, 10, locationListener);
-//    }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (locationManager != null && locationListener != null)
+            locationManager.removeUpdates(locationListener);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (locationManager != null && locationListener != null) {
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                // TODO: Consider calling
+                //    ActivityCompat#requestPermissions
+                // here to request the missing permissions, and then overriding
+                //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                //                                          int[] grantResults)
+                // to handle the case where the user grants the permission. See the documentation
+                // for ActivityCompat#requestPermissions for more details.
+                return;
+            }
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
+        }
+    }
+
+    public void drawRoute(ArrayList<LatLng> latLngs){
+        latLonRoute.clear();
+        latLonRoute.addAll(latLngs);
+        PolylineOptions polylineOptions = new PolylineOptions();
+
+        for (LatLng ll : latLonRoute) {
+            polylineOptions.add(ll);
+        }
+        llRoutePolyline = mMap.addPolyline(polylineOptions);
+        llRoutePolyline.setEndCap(new RoundCap());
+        llRoutePolyline.setWidth(8);
+        llRoutePolyline.setColor(Color.YELLOW);
+    }
 }

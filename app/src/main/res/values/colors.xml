@@ -10,4 +10,5 @@
     <color name="splashBackground">#b2dfdc</color>
     <color name="actionBar">#009787</color>
     <color name="notificationBar">#00723d</color>
+    <color name="textAndBackground">#b0dfdd</color>
 </resources>

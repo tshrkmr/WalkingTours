@@ -14,7 +14,7 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginBottom="8dp"
-        map:layout_constraintBottom_toTopOf="@+id/mapsAddressTextView"
+        map:layout_constraintBottom_toTopOf="@+id/mapsCurrentAddressTextView"
         map:layout_constraintEnd_toEndOf="parent"
         map:layout_constraintHorizontal_bias="0.0"
         map:layout_constraintStart_toStartOf="parent"
@@ -22,22 +22,24 @@
         map:layout_constraintVertical_bias="0.0" />
 
     <TextView
-        android:id="@+id/mapsAddressTextView"
+        android:id="@+id/mapsCurrentAddressTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
-        map:layout_constraintBottom_toTopOf="@+id/addressCheckbox"
+        map:layout_constraintBottom_toTopOf="@+id/mapsAddressCheckbox"
         map:layout_constraintEnd_toEndOf="parent"
         map:layout_constraintHorizontal_bias="0.498"
         map:layout_constraintStart_toStartOf="parent" />
 
     <CheckBox
-        android:id="@+id/geofenceCheckbox"
+        android:id="@+id/mapsGeofenceCheckbox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="4dp"
         android:layout_marginBottom="8dp"
+        android:checked="true"
+        android:onClick="geofenceVisibilityOption"
         android:text="@string/show_geofences"
         android:textColor="@color/white"
         map:layout_constraintBottom_toBottomOf="parent"
@@ -52,36 +54,54 @@
         map:layout_constraintGuide_percent=".5" />
 
     <CheckBox
-        android:id="@+id/addressCheckbox"
+        android:id="@+id/mapsAddressCheckbox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp"
+        android:checked="true"
+        android:onClick="addressVisibilityOption"
         android:text="@string/show_addresses"
         android:textColor="@color/white"
-        map:layout_constraintBottom_toTopOf="@+id/geofenceCheckbox"
-        map:layout_constraintEnd_toEndOf="@+id/geofenceCheckbox"
-        map:layout_constraintStart_toStartOf="@+id/geofenceCheckbox" />
+        map:layout_constraintBottom_toTopOf="@+id/mapsGeofenceCheckbox"
+        map:layout_constraintEnd_toEndOf="@+id/mapsGeofenceCheckbox"
+        map:layout_constraintStart_toStartOf="@+id/mapsGeofenceCheckbox" />
 
     <CheckBox
-        android:id="@+id/tourPathCheckbox"
+        android:id="@+id/mapsTourPathCheckbox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"
         android:layout_marginEnd="8dp"
+        android:checked="true"
+        android:onClick="tourPathVisibility"
         android:text="@string/show_tour_path"
         android:textColor="@color/white"
-        map:layout_constraintBottom_toBottomOf="@+id/geofenceCheckbox"
+        map:layout_constraintBottom_toBottomOf="@+id/mapsGeofenceCheckbox"
         map:layout_constraintEnd_toEndOf="parent"
         map:layout_constraintStart_toStartOf="@+id/guideline2" />
 
     <CheckBox
-        android:id="@+id/travelPathCheckbox"
+        android:id="@+id/mapsTravelPathCheckbox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:checked="true"
+        android:onClick="travelPathVisibility"
         android:text="@string/show_travel_path"
         android:textColor="@color/white"
-        map:layout_constraintEnd_toEndOf="@+id/tourPathCheckbox"
-        map:layout_constraintStart_toStartOf="@+id/tourPathCheckbox"
-        map:layout_constraintTop_toTopOf="@+id/addressCheckbox" />
+        map:layout_constraintEnd_toEndOf="@+id/mapsTourPathCheckbox"
+        map:layout_constraintStart_toStartOf="@+id/mapsTourPathCheckbox"
+        map:layout_constraintTop_toTopOf="@+id/mapsAddressCheckbox" />
+
+    <ProgressBar
+        android:id="@+id/mapsProgressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:indeterminateTint="@color/textAndBackground"
+        android:visibility="invisible"
+        map:layout_constraintBottom_toBottomOf="parent"
+        map:layout_constraintEnd_toEndOf="parent"
+        map:layout_constraintStart_toStartOf="parent"
+        map:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

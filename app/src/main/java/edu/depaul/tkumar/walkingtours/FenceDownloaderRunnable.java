@@ -1,7 +1,5 @@
 package edu.depaul.tkumar.walkingtours;
 
-import android.location.Address;
-import android.location.Geocoder;
 import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
@@ -19,14 +17,14 @@ import java.util.ArrayList;
 
 public class FenceDownloaderRunnable implements Runnable{
 
-    private static final String TAG = "FenceDataDownloader";
-    private final Geocoder geocoder;
     private final FenceManager fenceManager;
+    private final MapsActivity mapsActivity;
     private static final String FENCE_URL = "http://www.christopherhield.com/data/WalkingTourContent.json";
+    private static final String TAG = "FenceDataDownloader";
 
     FenceDownloaderRunnable(MapsActivity mapsActivity, FenceManager fenceManager) {
+        this.mapsActivity = mapsActivity;
         this.fenceManager = fenceManager;
-        geocoder = new Geocoder(mapsActivity);
     }
 
     @Override
@@ -40,7 +38,7 @@ public class FenceDownloaderRunnable implements Runnable{
             connection.connect();
 
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
-                Log.d(TAG, "run: Response code: " + connection.getResponseCode());
+                //Log.d(TAG, "run: Response code: " + connection.getResponseCode());
                 return;
             }
 
@@ -78,8 +76,9 @@ public class FenceDownloaderRunnable implements Runnable{
             return;
 
         ArrayList<FenceData> fences = new ArrayList<>();
+        ArrayList<LatLng> route = new ArrayList<>();
         try {
-            String lonLatPairs = "";
+            String lonLatPairs;
             JSONObject jObj = new JSONObject(result);
             JSONArray jArr = jObj.getJSONArray("fences");
             for (int i = 0; i < jArr.length(); i++) {
@@ -92,7 +91,7 @@ public class FenceDownloaderRunnable implements Runnable{
                 String description = fObj.getString("description");
                 String color = fObj.getString("fenceColor");
                 String imageURL = fObj.getString("image");
-                Log.d(TAG, "processData: " + id);
+                //Log.d(TAG, "processData: " + latitude + "," + longitude);
                 FenceData fd = new FenceData(id, latitude, longitude, address, rad, description, color, imageURL);
                 fences.add(fd);
             }
@@ -100,9 +99,15 @@ public class FenceDownloaderRunnable implements Runnable{
             JSONArray jsonArray = jObj.getJSONArray("path");
             for(int j = 0; j<jsonArray.length(); j++){
 
-                lonLatPairs += jsonArray.getString(j);
+                lonLatPairs = jsonArray.getString(j);
+                String[] parts = lonLatPairs.split(", ");
+                float latitude = (float) Double.parseDouble(parts[1]);
+                float longitude = (float) Double.parseDouble(parts[0]);
+                LatLng latLng = new LatLng(latitude, longitude);
+                route.add(latLng);
+                //Log.d(TAG, "processData: lon, lat " + parts[0] + "," + parts[1]);
             }
-            Log.d(TAG, "processData: latlon" + lonLatPairs);
+            mapsActivity.runOnUiThread(()->mapsActivity.drawRoute(route));
             fenceManager.addFences(fences);
         } catch (Exception e) {
             e.printStackTrace();

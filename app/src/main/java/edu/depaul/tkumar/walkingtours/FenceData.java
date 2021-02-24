@@ -59,8 +59,7 @@ public class FenceData implements Serializable {
     String getImageURL(){return imageURL;}
 
     int getType() {
-        int type = Geofence.GEOFENCE_TRANSITION_ENTER;
-        return type;
+        return Geofence.GEOFENCE_TRANSITION_ENTER;
     }
 
 

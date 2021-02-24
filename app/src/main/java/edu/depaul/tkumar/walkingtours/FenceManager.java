@@ -27,13 +27,13 @@ import java.util.List;
 
 public class FenceManager {
 
-    private static final String TAG = "FenceManager";
-    private final MapsActivity mapsActivity;
-    private final GeofencingClient geofencingClient;
-    private PendingIntent geofencePendingIntent;
-    private final ArrayList<Circle> circles = new ArrayList<>();
     private final List<PatternItem> pattern = Collections.singletonList(new Dot());
     private static final ArrayList<FenceData> fenceList = new ArrayList<>();
+    private final ArrayList<Circle> circles = new ArrayList<>();
+    private final GeofencingClient geofencingClient;
+    private PendingIntent geofencePendingIntent;
+    private final MapsActivity mapsActivity;
+    private static final String TAG = "FenceManager";
 
     FenceManager(final MapsActivity mapsActivity) {
         this.mapsActivity = mapsActivity;
@@ -58,7 +58,6 @@ public class FenceManager {
     }
 
     void drawFences() {
-
         for (FenceData fd : fenceList) {
             drawFence(fd);
         }
@@ -72,7 +71,6 @@ public class FenceManager {
 
 
     private void drawFence(FenceData fd) {
-
         int line = Color.parseColor(fd.getFenceColor());
         int fill = ColorUtils.setAlphaComponent(line, 85);
 
@@ -88,7 +86,6 @@ public class FenceManager {
     }
 
     void addFences(ArrayList<FenceData> fences) {
-
         fenceList.clear();
         fenceList.addAll(fences);
 
@@ -100,7 +97,8 @@ public class FenceManager {
                             fd.getLon(),
                             fd.getRadius())
                     .setTransitionTypes(fd.getType())
-                    .setExpirationDuration(Geofence.NEVER_EXPIRE) //Fence expires after N millis  -or- Geofence.NEVER_EXPIRE
+                    .setNotificationResponsiveness(1000)
+                    .setExpirationDuration(Geofence.NEVER_EXPIRE)//Fence expires after N millis  -or- Geofence.NEVER_EXPIRE
                     .build();
 
             GeofencingRequest geofencingRequest = new GeofencingRequest.Builder()
@@ -127,7 +125,6 @@ public class FenceManager {
     }
 
     private PendingIntent getGeofencePendingIntent() {
-
         // Reuse the PendingIntent if we already have it.
         if (geofencePendingIntent != null) {
             return geofencePendingIntent;
@@ -140,4 +137,6 @@ public class FenceManager {
         geofencePendingIntent = PendingIntent.getBroadcast(mapsActivity, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         return geofencePendingIntent;
     }
+
+
 }

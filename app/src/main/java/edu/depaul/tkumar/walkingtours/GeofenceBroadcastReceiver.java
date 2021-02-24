@@ -34,15 +34,17 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             Log.e(TAG, "Error: " + geofencingEvent.getErrorCode());
             return;
         }
-        // Get the geofences that were triggered. A single event can trigger
-        // multiple geofences.
-        List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
+        if(geofencingEvent.getGeofenceTransition() == Geofence.GEOFENCE_TRANSITION_ENTER) {
+            // Get the geofences that were triggered. A single event can trigger
+            // multiple geofences.
+            List<Geofence> triggeringGeofences = geofencingEvent.getTriggeringGeofences();
 
-        for (Geofence g : triggeringGeofences) {
+            for (Geofence g : triggeringGeofences) {
 
-            // Here use the ID to get details stored.
-            FenceData fd = FenceManager.getFenceData(g.getRequestId());
-            sendNotification(context, fd);
+                // Here use the ID to get details stored.
+                FenceData fd = FenceManager.getFenceData(g.getRequestId());
+                sendNotification(context, fd);
+            }
         }
     }
 

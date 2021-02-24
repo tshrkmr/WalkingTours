@@ -8,17 +8,14 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
-import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.LocationRequest;
@@ -32,8 +29,10 @@ import java.util.ArrayList;
 
 public class SplashActivity extends AppCompatActivity {
 
-    private static final int LOCATION_REQUEST = 111;
-    private static final int ACCURACY_REQUEST = 222;
+    private static final int LOC_COMBO_REQUEST = 111;
+    private static final int LOC_ONLY_PERM_REQUEST = 222;
+    private static final int BGLOC_ONLY_PERM_REQUEST = 333;
+    private static final int ACCURACY_REQUEST = 444;
     private static final int SPLASH_TIME_OUT = 1000;
     private static final String TAG = "SplashActivity";
 
@@ -93,27 +92,63 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private boolean checkPermission() {
-        ArrayList<String> perms = new ArrayList<>();
+//        ArrayList<String> perms = new ArrayList<>();
+//
+//        if (ContextCompat.checkSelfPermission(this,
+//                Manifest.permission.ACCESS_FINE_LOCATION) !=
+//                PackageManager.PERMISSION_GRANTED) {
+//            perms.add(Manifest.permission.ACCESS_FINE_LOCATION);
+//        }
+//
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+//            if (ContextCompat.checkSelfPermission(this,
+//                    Manifest.permission.ACCESS_BACKGROUND_LOCATION) !=
+//                    PackageManager.PERMISSION_GRANTED) {
+//                perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+//            }
+//        }
+//
+//        if (!perms.isEmpty()) {
+//            String[] array = perms.toArray(new String[0]);
+//            ActivityCompat.requestPermissions(this,
+//                    array, LOCATION_REQUEST);
+//            return false;
+//        }
+//        return true;
 
-        if (ContextCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) !=
-                PackageManager.PERMISSION_GRANTED) {
-            perms.add(Manifest.permission.ACCESS_FINE_LOCATION);
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // If R or greater, need to ask for these separately
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION) !=
-                    PackageManager.PERMISSION_GRANTED) {
-                perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+                    Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOC_ONLY_PERM_REQUEST);
+                return false;
             }
-        }
+            return true;
+        } else {
 
-        if (!perms.isEmpty()) {
-            String[] array = perms.toArray(new String[0]);
-            ActivityCompat.requestPermissions(this,
-                    array, LOCATION_REQUEST);
-            return false;
+            ArrayList<String> perms = new ArrayList<>();
+
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                perms.add(Manifest.permission.ACCESS_FINE_LOCATION);
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                if (ContextCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION) !=
+                        PackageManager.PERMISSION_GRANTED) {
+                    perms.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
+                }
+            }
+
+            if (!perms.isEmpty()) {
+                String[] array = perms.toArray(new String[0]);
+                ActivityCompat.requestPermissions(this,
+                        array, LOC_COMBO_REQUEST);
+                return false;
+            }
         }
         return true;
     }
@@ -125,31 +160,66 @@ public class SplashActivity extends AppCompatActivity {
 
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == LOCATION_REQUEST) {
+//        if (requestCode == LOCATION_REQUEST) {
+//            for (int i = 0; i < permissions.length; i++) {
+//                if (permissions[i].equals(Manifest.permission.ACCESS_FINE_LOCATION)) {
+//                    if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+//                        determineLocation();
+//                    } else {
+//                        noLocationPermission("Background Location Permission Required");
+//                        //Toast.makeText(this, "Location Permission not Granted", Toast.LENGTH_SHORT).show();
+//                    }
+//                }
+//            }
+//        }
+
+        if (requestCode == LOC_ONLY_PERM_REQUEST) {
+            if (permissions[0].equals(Manifest.permission.ACCESS_FINE_LOCATION) &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                requestBgPermission();
+            }else{
+                noLocationPermission("Background Location Permission Required");
+            }
+        } else if (requestCode == LOC_COMBO_REQUEST) {
+            int permCount = permissions.length;
+            int permSum = 0;
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < permissions.length; i++) {
-                if (permissions[i].equals(Manifest.permission.ACCESS_FINE_LOCATION)) {
-                    if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                        determineLocation();
-                    } else {
-                        noLocationPermission("Background Location Permission Required");
-                        //Toast.makeText(this, "Location Permission not Granted", Toast.LENGTH_SHORT).show();
-                    }
+                if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                    permSum++;
+                } else {
+                    sb.append(permissions[i]).append(", ");
                 }
+            }
+            if (permSum == permCount) {
+                determineLocation();
+            } else {
+//                Toast.makeText(this,
+//                        "Required permissions not granted: " + sb.toString(),
+//                        Toast.LENGTH_LONG).show();
+                noLocationPermission("Background Location Permission Required");
+            }
+        } else if (requestCode == BGLOC_ONLY_PERM_REQUEST) {
+            if (permissions[0].equals(Manifest.permission.ACCESS_BACKGROUND_LOCATION) &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                determineLocation();
+            } else{
+               noLocationPermission("Background Location Permission Required");
             }
         }
     }
 
-//    public void requestBgPermission() {
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-//
-//            if (ContextCompat.checkSelfPermission(this,
-//                    Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-//                ActivityCompat.requestPermissions(this,
-//                        new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, BGLOC_ONLY_PERM_REQUEST);
-//            }
-//
-//        }
-//    }
+    public void requestBgPermission() {
+        //Please select Allow all the time and come back
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+
+            if (ContextCompat.checkSelfPermission(this,
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, BGLOC_ONLY_PERM_REQUEST);
+            }
+        }
+    }
 
     private void openMapsActivity(){
         Handler handler = new Handler(Looper.myLooper());
