@@ -7,7 +7,9 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
@@ -34,11 +36,13 @@ public class SplashActivity extends AppCompatActivity {
     private static final int BGLOC_ONLY_PERM_REQUEST = 333;
     private static final int ACCURACY_REQUEST = 444;
     private static final int SPLASH_TIME_OUT = 1000;
+    private Activity activity;
     private static final String TAG = "SplashActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        activity = this;
         setContentView(R.layout.activity_splash);
         determineLocation();
     }
@@ -211,14 +215,25 @@ public class SplashActivity extends AppCompatActivity {
 
     public void requestBgPermission() {
         //Please select Allow all the time and come back
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Important Detour");
+        builder.setMessage("Select Allow all the time");
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 
-            if (ContextCompat.checkSelfPermission(this,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, BGLOC_ONLY_PERM_REQUEST);
+                    if (ContextCompat.checkSelfPermission(activity,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                        ActivityCompat.requestPermissions(activity,
+                                new String[]{Manifest.permission.ACCESS_BACKGROUND_LOCATION}, BGLOC_ONLY_PERM_REQUEST);
+                    }
+                }
             }
-        }
+        });
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
     }
 
     private void openMapsActivity(){

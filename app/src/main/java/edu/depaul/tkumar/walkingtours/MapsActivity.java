@@ -15,6 +15,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Display;
 import android.view.View;
 import android.widget.CheckBox;
@@ -57,13 +58,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private CheckBox addressCheckbox;
     private ProgressBar progressBar;
     public static int screenWidth;
+    private static final String TAG = "MapsActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        binding = ActivityMapsBinding.inflate(getLayoutInflater());
-        setContentView(binding.getRoot());
+        //binding = ActivityMapsBinding.inflate(getLayoutInflater());
+        //setContentView(binding.getRoot());
+        setContentView(R.layout.activity_maps);
         initMap();
         initializeFields();
         getScreenDimensions();
@@ -230,7 +233,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             float r = getRadius();
             if (r > 0) {
-                Bitmap icon = BitmapFactory.decodeResource(getResources(), R.drawable.walker_left);
+                Bitmap icon;
+                if(location.getBearing()<=180)
+                {
+                    icon = BitmapFactory.decodeResource(getResources(), R.drawable.walker_right);
+                }else{
+                    icon = BitmapFactory.decodeResource(getResources(), R.drawable.walker_left);
+                }
                 Bitmap resized = Bitmap.createScaledBitmap(icon, (int) r, (int) r, false);
 
                 BitmapDescriptor iconBitmap = BitmapDescriptorFactory.fromBitmap(resized);
@@ -238,7 +247,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 MarkerOptions options = new MarkerOptions();
                 options.position(latLng);
                 options.icon(iconBitmap);
-                options.rotation(location.getBearing());
+                Log.d(TAG, "updateLocation: " + location.getBearing());
+                //options.rotation(location.getBearing());
 
                 if (personMarker != null) {
                     personMarker.remove();

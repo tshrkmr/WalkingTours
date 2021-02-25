@@ -95,7 +95,8 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
                 .setVibrate(new long[] {1, 1, 1})
                 .setAutoCancel(true)
                 .setLights(0xff0000ff, 300, 1000) // blue color
-                .setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                //.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION))
+                .setSound(RingtoneManager.getDefaultUri(R.raw.notif_sound))
                 .build();
 
         notificationManager.notify(getUniqueId(), notification);
